@@ -4,7 +4,7 @@
 
 A minimalist app that tracks your movement during the day. Steps, GPS routes and reports, in a clean interface made for phones.
 
-**Live app:** https://nikistoichev11-dotcom.github.io/stride/
+**Live app:** https://nikistoichev11-dotcom.github.io/Stride/
 
 ## Features
 
