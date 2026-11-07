@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stride</title>
+<meta name="description" content="Stride tracks your steps, routes and daily progress. Simple, private, and free.">
+<meta name="theme-color" content="#3552F5">
+<link rel="icon" href="icons/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F1F3F6;--surface:#FFFFFF;--ink:#14181F;--muted:#6B7482;--line:#E1E5EB;--bar:#D5DBF5;--accent:#3552F5;--accent-ink:#FFFFFF;--warn:#B4540A;
+  color-scheme:light;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0F1218;--surface:#171B23;--ink:#F2F4F8;--muted:#8F98A7;--line:#262C37;--bar:#2A3358;--accent:#7C91FF;--accent-ink:#0F1218;--warn:#F0A25C;color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#0F1218;--surface:#171B23;--ink:#F2F4F8;--muted:#8F98A7;--line:#262C37;--bar:#2A3358;--accent:#7C91FF;--accent-ink:#0F1218;--warn:#F0A25C;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.4}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+.app{max-width:480px;margin:0 auto;padding:20px 24px 120px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.date{font-size:15px;color:var(--muted);font-weight:500}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);padding:6px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.on .dot{background:var(--accent);animation:pulse 1.6s ease-in-out infinite}
+.on{color:var(--ink)}
+@keyframes pulse{50%{opacity:.3}}
+.view[hidden]{display:none}
+.hero{margin-top:36px}
+.steps{font-size:84px;font-weight:800;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.sub{margin-top:8px;font-size:16px;color:var(--muted)}
+.track{margin-top:20px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.fill{height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .4s ease}
+.goal{margin-top:12px;display:flex;align-items:center;justify-content:space-between;font-size:14px;color:var(--muted)}
+.goal .adj{display:flex;gap:8px}
+.chip{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:18px;font-weight:600;line-height:1;font-family:inherit;cursor:pointer}
+.chip:active{transform:scale(.94)}
+h2{margin:40px 0 14px;font-size:15px;font-weight:600}
+.hours{display:flex;align-items:flex-end;gap:3px;height:96px}
+.hours i{flex:1;background:var(--bar);border-radius:3px;min-height:4px;height:4%;transition:height .3s ease}
+.hours i.now{background:var(--accent)}
+.axis{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--muted)}
+.stats{margin-top:40px;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.stat{padding:18px 0 18px 16px;border-left:1px solid var(--line)}
+.stat:first-child{border-left:0;padding-left:0}
+.stat b{display:block;font-size:24px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.notice{margin-top:24px;padding:14px 16px;border-radius:14px;background:var(--surface);border:1px solid var(--line);font-size:14px}
+.notice[hidden]{display:none}
+.notice p{margin:0 0 10px;color:var(--warn);font-weight:500}
+.link{background:none;border:0;padding:0;font-size:14px;font-weight:600;font-family:inherit;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.foot{margin-top:28px;text-align:center}
+.week{position:relative;display:flex;align-items:flex-end;gap:10px;height:180px;margin-top:8px}
+.col{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:8px}
+.col .v{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.col .b{width:100%;background:var(--bar);border-radius:6px;min-height:4px}
+.col.today .b{background:var(--accent)}
+.col .d{font-size:12px;color:var(--muted);font-weight:500}
+.col.today .d{color:var(--ink);font-weight:700}
+.gl{position:absolute;left:0;right:0;border-top:1px dashed var(--muted);opacity:.5;pointer-events:none}
+.gl span{position:absolute;right:0;top:-18px;font-size:11px;color:var(--muted)}
+.avg{margin-top:20px;font-size:16px;color:var(--muted)}
+.avg b{color:var(--ink);font-size:28px;letter-spacing:-.02em}
+.dock{position:fixed;left:0;right:0;bottom:0;padding:12px 24px calc(12px + env(safe-area-inset-bottom,0px));background:linear-gradient(to top,var(--bg) 70%,transparent)}
+.dock-in{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.go{height:56px;border:0;border-radius:28px;background:var(--accent);color:var(--accent-ink);font-size:17px;font-weight:700;font-family:inherit;cursor:pointer;transition:transform .15s}
+.go:active{transform:scale(.98)}
+.tabs{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px}
+.tab{flex:1;height:38px;border:0;border-radius:999px;background:none;color:var(--muted);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.mk{font-size:64px}
+.map{position:relative;margin-top:24px;border-radius:20px;background:var(--surface);border:1px solid var(--line);overflow:hidden;aspect-ratio:400/360}
+.map svg{display:block;width:100%;height:100%}
+.mempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:32px;text-align:center;color:var(--muted);font-size:15px}
+.halo{transform-box:fill-box;transform-origin:center;animation:ring 1.8s ease-out infinite}
+@keyframes ring{from{transform:scale(.5);opacity:.5}to{transform:scale(1.3);opacity:0}}
+.mrow{display:flex;justify-content:space-between;gap:12px;margin-top:12px;font-size:14px;color:var(--muted);min-height:20px}
+.mgo{margin-top:20px;width:100%;height:52px;border:0;border-radius:26px;background:var(--accent);color:var(--accent-ink);font-size:16px;font-weight:700;font-family:inherit;cursor:pointer}
+.mgo.stop{background:var(--ink);color:var(--bg)}
+.rowbtn{width:100%;background:none;border:0;border-bottom:1px solid var(--line);color:inherit;font-family:inherit;text-align:left;cursor:pointer}
+.rows:empty{border-top:0}
+.foot.col{display:flex;flex-direction:column;align-items:center;gap:14px}
+.tab[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.rt{margin-top:28px;font-size:64px}
+.rc{color:var(--ink);font-weight:600;min-height:22px}
+.rbars{display:flex;align-items:flex-end;gap:3px;height:120px}
+.rbars i{flex:1;background:var(--bar);border-radius:3px;min-height:4px}
+.rbars i.hit{background:var(--accent)}
+.rows{border-top:1px solid var(--line)}
+.row{display:flex;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--line);font-size:15px}
+.row span{color:var(--muted)}
+.row b{font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <div class="date" id="date"></div>
+    <div class="pill" id="status"><span class="dot"></span><span id="statusText">Paused</span></div>
+  </header>
+
+  <section class="view" id="today" aria-label="Today">
+    <div class="hero">
+      <div class="steps" id="steps">0</div>
+      <div class="sub">steps today</div>
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <div class="goal">
+        <span id="goalText">Goal 8,000 steps</span>
+        <span class="adj">
+          <button class="chip" id="gMinus" aria-label="Lower goal by 500 steps">−</button>
+          <button class="chip" id="gPlus" aria-label="Raise goal by 500 steps">+</button>
+        </span>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b id="dist">0.00</b><span>km</span></div>
+      <div class="stat"><b id="mins">0</b><span>active min</span></div>
+      <div class="stat"><b id="kcal">0</b><span>kcal</span></div>
+    </div>
+
+    <h2>Your day</h2>
+    <div class="hours" id="hours" role="img" aria-label="Steps for each hour of today"></div>
+    <div class="axis"><span>0:00</span><span>6:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
+
+    <div class="notice" id="notice" role="status" hidden>
+      <p id="noticeText"></p>
+      <button class="link" id="demoBtn">Try demo walking</button>
+    </div>
+    <div class="foot"><button class="link" id="demoFoot">Try demo walking</button></div>
+  </section>
+
+  <section class="view" id="weekView" aria-label="This week" hidden>
+    <div class="hero">
+      <div class="avg"><b id="avg">0</b> steps a day on average</div>
+    </div>
+    <h2>Last 7 days</h2>
+    <div class="week" id="week"></div>
+  </section>
+
+  <section class="view" id="mapView" aria-label="Route" hidden>
+    <div class="hero">
+      <div class="steps mk" id="mDist">0.00</div>
+      <div class="sub">km on this route</div>
+    </div>
+    <div class="map" id="map" role="img" aria-label="Map of your route"></div>
+    <div class="mrow"><span id="mState">Ready</span><span id="mAcc"></span></div>
+    <button class="mgo" id="mGo">Start route</button>
+    <div class="stats">
+      <div class="stat"><b id="mTime">0:00</b><span>time</span></div>
+      <div class="stat"><b id="mSpd">—</b><span>km/h</span></div>
+      <div class="stat"><b id="mPace">—</b><span>min/km</span></div>
+    </div>
+    <div class="notice" id="mNote" role="status" hidden>
+      <p id="mNoteText"></p>
+      <button class="link" id="mNoteDemo">Try demo walk</button>
+    </div>
+    <h2 id="mListH" hidden>Saved routes</h2>
+    <div class="rows" id="mList"></div>
+    <div class="foot col">
+      <button class="link" id="mDemo">Try demo walk</button>
+      <button class="link" id="mBack" style="display:none">Close saved route</button>
+    </div>
+  </section>
+
+  <section class="view" id="reportsView" aria-label="Reports" hidden>
+    <div class="hero">
+      <div class="tabs" role="group" aria-label="Report period">
+        <button class="tab" id="r7" aria-pressed="true">7 days</button>
+        <button class="tab" id="r30" aria-pressed="false">30 days</button>
+      </div>
+      <div class="steps rt" id="rTotal">0</div>
+      <div class="sub" id="rSub"></div>
+      <div class="sub rc" id="rChange"></div>
+    </div>
+    <h2>Daily steps</h2>
+    <div class="rbars" id="rBars" role="img" aria-label="Steps for each day in the period"></div>
+    <div class="axis"><span id="rFrom"></span><span id="rTo"></span></div>
+    <h2>Summary</h2>
+    <div class="rows" id="rRows"></div>
+  </section>
+</main>
+
+<nav class="dock">
+  <div class="dock-in">
+    <button class="go" id="go">Start tracking</button>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tabToday" aria-selected="true">Today</button>
+      <button class="tab" role="tab" id="tabMap" aria-selected="false">Route</button>
+      <button class="tab" role="tab" id="tabWeek" aria-selected="false">Week</button>
+      <button class="tab" role="tab" id="tabReports" aria-selected="false">Reports</button>
+    </div>
+  </div>
+</nav>
+
+<script>
+(function(){
+  var STORE_KEY = 'stride-v1';
+  var STRIDE_M = 0.75, KCAL = 0.04;
+  var $ = function(id){ return document.getElementById(id); };
+
+  function load(){
+    try {
+      var r = JSON.parse(localStorage.getItem(STORE_KEY));
+      if (r && r.days && typeof r.goal === 'number') return r;
+    } catch(e) {}
+    return { goal: 8000, days: {} };
+  }
+  var store = load();
+  var saveTimer = null;
+  function save(){
+    if (saveTimer) return;
+    saveTimer = setTimeout(function(){
+      saveTimer = null;
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch(e) {}
+    }, 1500);
+  }
+
+  function keyOf(d){
+    var m = d.getMonth() + 1, day = d.getDate();
+    return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+  }
+  function getDay(k){
+    var d = store.days[k];
+    if (!d || !Array.isArray(d.h) || d.h.length !== 24) {
+      d = store.days[k] = { s: (d && d.s) || 0, m: (d && d.m) || 0, h: new Array(24).fill(0) };
+    }
+    return d;
+  }
+  function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+
+  /* ---- build static UI ---- */
+  var hoursEl = $('hours'), bars = [];
+  for (var i = 0; i < 24; i++) { var b = document.createElement('i'); hoursEl.appendChild(b); bars.push(b); }
+
+  /* ---- tracking ---- */
+  var tracking = false, gotSensor = false, base = 9.8, lastT = 0, lastMin = '';
+  var demoTimer = null, sensorCheck = null;
+
+  function addStep(){
+    var now = new Date(), d = getDay(keyOf(now));
+    d.s += 1;
+    d.h[now.getHours()] += 1;
+    var mk = keyOf(now) + now.getHours() + ':' + now.getMinutes();
+    if (mk !== lastMin) { lastMin = mk; d.m += 1; }
+    save();
+    render();
+  }
+
+  function onMotion(e){
+    var a = e.accelerationIncludingGravity;
+    if (!a || a.x == null || a.y == null || a.z == null) return;
+    gotSensor = true;
+    var m = Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+    base = base * 0.92 + m * 0.08;
+    var t = Date.now();
+    if (m - base > 1.6 && t - lastT > 300) { lastT = t; addStep(); }
+  }
+
+  function showNotice(text, withDemo){
+    $('noticeText').textContent = text;
+    $('demoBtn').style.display = withDemo ? '' : 'none';
+    $('notice').hidden = false;
+  }
+  function hideNotice(){ $('notice').hidden = true; }
+
+  function setTracking(on){
+    tracking = on;
+    var p = $('status');
+    p.classList.toggle('on', on);
+    $('statusText').textContent = on ? 'Tracking' : 'Paused';
+    $('go').textContent = on ? 'Pause tracking' : (demoTimer ? 'Stop demo' : 'Start tracking');
+  }
+
+  async function start(){
+    hideNotice();
+    if (typeof window.DeviceMotionEvent === 'undefined') {
+      showNotice('This device or browser has no motion sensor. You can still try the demo.', true);
+      return;
+    }
+    try {
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        var res = await DeviceMotionEvent.requestPermission();
+        if (res !== 'granted') {
+          showNotice('Motion access was denied. Allow motion and orientation access in your browser settings, then try again.', true);
+          return;
+        }
+      }
+    } catch (err) {
+      showNotice('Motion access is not available here. You can still try the demo.', true);
+      return;
+    }
+    gotSensor = false; base = 9.8;
+    window.addEventListener('devicemotion', onMotion);
+    setTracking(true);
+    clearTimeout(sensorCheck);
+    sensorCheck = setTimeout(function(){
+      if (tracking && !gotSensor) {
+        showNotice('No motion data is coming in. Try on a phone, or run the demo.', true);
+      }
+    }, 3000);
+  }
+
+  function stop(){
+    window.removeEventListener('devicemotion', onMotion);
+    clearTimeout(sensorCheck);
+    setTracking(false);
+  }
+
+  function toggleDemo(){
+    hideNotice();
+    if (demoTimer) {
+      clearInterval(demoTimer); demoTimer = null;
+      setTracking(false);
+      $('demoFoot').textContent = 'Try demo walking';
+      return;
+    }
+    if (tracking) stop();
+    demoTimer = setInterval(addStep, 600);
+    setTracking(true);
+    $('go').textContent = 'Stop demo';
+    $('demoFoot').textContent = 'Stop demo';
+  }
+
+  /* ---- render ---- */
+  function render(){
+    var now = new Date(), k = keyOf(now), d = getDay(k), goal = store.goal;
+    $('date').textContent = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
+    $('steps').textContent = fmt(d.s);
+    $('fill').style.width = Math.min(100, d.s / goal * 100) + '%';
+    $('goalText').textContent = d.s >= goal ? 'Goal reached · ' + fmt(goal) + ' steps' : 'Goal ' + fmt(goal) + ' steps';
+    $('dist').textContent = (d.s * STRIDE_M / 1000).toFixed(2);
+    $('mins').textContent = d.m;
+    $('kcal').textContent = fmt(d.s * KCAL);
+
+    var max = Math.max.apply(null, d.h.concat([1])), cur = now.getHours();
+    for (var i = 0; i < 24; i++) {
+      bars[i].style.height = Math.max(4, d.h[i] / max * 100) + '%';
+      bars[i].className = i === cur ? 'now' : '';
+    }
+    if (!$('weekView').hidden) renderWeek();
+    if (!$('reportsView').hidden) renderReports();
+  }
+
+  function renderWeek(){
+    var wrap = $('week'), now = new Date(), days = [], total = 0, i;
+    for (i = 6; i >= 0; i--) {
+      var dt = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      var rec = store.days[keyOf(dt)];
+      days.push({ label: dt.toLocaleDateString('en-US', { weekday: 'short' }), s: rec ? rec.s : 0, today: i === 0 });
+      total += rec ? rec.s : 0;
+    }
+    var top = Math.max(store.goal, Math.max.apply(null, days.map(function(x){ return x.s; })));
+    wrap.innerHTML = '';
+    var gl = document.createElement('div');
+    gl.className = 'gl';
+    // bar area is the column height minus value (~20px) and label (~28px)
+    gl.style.bottom = 'calc(28px + (100% - 48px) * ' + (store.goal / top) + ')';
+    gl.innerHTML = '<span>Goal</span>';
+    days.forEach(function(x){
+      var c = document.createElement('div');
+      c.className = 'col' + (x.today ? ' today' : '');
+      var v = document.createElement('div'); v.className = 'v'; v.textContent = x.s ? fmt(x.s) : '';
+      var b = document.createElement('div'); b.className = 'b';
+      b.style.height = 'calc((100% - 48px) * ' + (x.s / top) + ')';
+      var l = document.createElement('div'); l.className = 'd'; l.textContent = x.label;
+      c.appendChild(v); c.appendChild(b); c.appendChild(l);
+      wrap.appendChild(c);
+    });
+    wrap.appendChild(gl);
+    $('avg').textContent = fmt(total / 7);
+  }
+
+  /* ---- events ---- */
+  $('go').addEventListener('click', function(){
+    if (demoTimer) { toggleDemo(); return; }
+    if (tracking) stop(); else start();
+  });
+  $('demoBtn').addEventListener('click', toggleDemo);
+  $('demoFoot').addEventListener('click', toggleDemo);
+
+  function adjustGoal(delta){
+    store.goal = Math.min(50000, Math.max(1000, store.goal + delta));
+    save(); render();
+  }
+  $('gMinus').addEventListener('click', function(){ adjustGoal(-500); });
+  $('gPlus').addEventListener('click', function(){ adjustGoal(500); });
+
+  var rPeriod = 7;
+
+  function renderReports(){
+    var n = rPeriod, now = new Date(), days = [], total = 0, mins = 0, goalDays = 0, prev = 0, i;
+    var hrs = new Array(24).fill(0), best = null;
+    for (i = n - 1; i >= 0; i--) {
+      var dt = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      var rec = store.days[keyOf(dt)], s = rec ? rec.s : 0;
+      days.push({ dt: dt, s: s });
+      total += s;
+      if (rec) {
+        mins += rec.m || 0;
+        if (Array.isArray(rec.h)) for (var h = 0; h < 24; h++) hrs[h] += rec.h[h] || 0;
+      }
+      if (s >= store.goal) goalDays++;
+      if (s > 0 && (!best || s > best.s)) best = days[days.length - 1];
+    }
+    for (i = n; i < n * 2; i++) {
+      var pd = store.days[keyOf(new Date(now.getFullYear(), now.getMonth(), now.getDate() - i))];
+      prev += pd ? pd.s : 0;
+    }
+    $('rTotal').textContent = fmt(total);
+    $('rSub').textContent = total ? 'steps in the last ' + n + ' days' : 'No movement recorded yet. Start tracking to build your report.';
+    var ch = '';
+    if (total && prev) {
+      var pct = Math.round((total - prev) / prev * 100);
+      ch = pct === 0 ? 'Same as the previous ' + n + ' days' : (pct > 0 ? 'Up ' : 'Down ') + Math.abs(pct) + '% from the previous ' + n + ' days';
+    }
+    $('rChange').textContent = ch;
+
+    var top = Math.max(store.goal, Math.max.apply(null, days.map(function(x){ return x.s; }))), bw = $('rBars');
+    bw.innerHTML = '';
+    days.forEach(function(x){
+      var b = document.createElement('i');
+      b.style.height = Math.max(4, x.s / top * 100) + '%';
+      if (x.s >= store.goal) b.className = 'hit';
+      b.title = x.dt.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' }) + ': ' + fmt(x.s) + ' steps';
+      bw.appendChild(b);
+    });
+    var short = { day: 'numeric', month: 'short' };
+    $('rFrom').textContent = days[0].dt.toLocaleDateString('en-US', short);
+    $('rTo').textContent = 'Today';
+
+    var pk = 0;
+    for (i = 1; i < 24; i++) if (hrs[i] > hrs[pk]) pk = i;
+    var activeTxt = mins >= 60 ? Math.floor(mins / 60) + ' h ' + (mins % 60) + ' min' : mins + ' min';
+    var rows = [
+      ['Daily average', fmt(total / n) + ' steps'],
+      ['Best day', best ? fmt(best.s) + ' on ' + best.dt.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' }) : '—'],
+      ['Goal reached', goalDays + ' of ' + n + ' days'],
+      ['Busiest hour', total ? pk + ':00–' + (pk + 1) + ':00' : '—'],
+      ['Active time', activeTxt],
+      ['Distance', (total * STRIDE_M / 1000).toFixed(1) + ' km'],
+      ['Calories', fmt(total * KCAL) + ' kcal']
+    ];
+    var rw = $('rRows');
+    rw.innerHTML = '';
+    rows.forEach(function(r){
+      var d = document.createElement('div'); d.className = 'row';
+      var a = document.createElement('span'); a.textContent = r[0];
+      var b = document.createElement('b'); b.textContent = r[1];
+      d.appendChild(a); d.appendChild(b); rw.appendChild(d);
+    });
+  }
+
+  function setPeriod(n){
+    rPeriod = n;
+    $('r7').setAttribute('aria-pressed', String(n === 7));
+    $('r30').setAttribute('aria-pressed', String(n === 30));
+    renderReports();
+  }
+  $('r7').addEventListener('click', function(){ setPeriod(7); });
+  $('r30').addEventListener('click', function(){ setPeriod(30); });
+
+  function showTab(name){
+    $('today').hidden = name !== 'today';
+    $('weekView').hidden = name !== 'week';
+    $('reportsView').hidden = name !== 'reports';
+    $('mapView').hidden = name !== 'map';
+    $('tabToday').setAttribute('aria-selected', String(name === 'today'));
+    $('tabWeek').setAttribute('aria-selected', String(name === 'week'));
+    $('tabReports').setAttribute('aria-selected', String(name === 'reports'));
+    $('tabMap').setAttribute('aria-selected', String(name === 'map'));
+    if (name === 'week') renderWeek();
+    if (name === 'reports') renderReports();
+    if (name === 'map') renderMap(true);
+    window.scrollTo(0, 0);
+  }
+  $('tabToday').addEventListener('click', function(){ showTab('today'); });
+  $('tabWeek').addEventListener('click', function(){ showTab('week'); });
+  $('tabReports').addEventListener('click', function(){ showTab('reports'); });
+  $('tabMap').addEventListener('click', function(){ showTab('map'); });
+
+  /* ---- GPS route map ---- */
+  if (!Array.isArray(store.routes)) store.routes = [];
+  var rec = 'idle', geoId = null, demoId = null, tickId = null, gotFix = false, accM = null, viewR = null;
+
+  function hav(a, b){
+    var R = 6371000, k = Math.PI / 180, dLa = (b[0] - a[0]) * k, dLo = (b[1] - a[1]) * k;
+    var x = Math.pow(Math.sin(dLa / 2), 2) + Math.cos(a[0] * k) * Math.cos(b[0] * k) * Math.pow(Math.sin(dLo / 2), 2);
+    return 2 * R * Math.asin(Math.sqrt(x));
+  }
+  function span(r){ return r.pts.length ? r.pts[r.pts.length - 1][2] - r.pts[0][2] : 0; }
+  function dur(r){ if (r.dur != null) return r.dur; return r.demo ? span(r) : Date.now() - r.t0; }
+  function fdur(ms){
+    var s = Math.max(0, Math.round(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
+    return (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (x < 10 ? '0' : '') + x;
+  }
+  function finish(r, init){
+    r.dur = init ? (r.demo ? span(r) : r.pts[r.pts.length - 1][2] - r.t0) : dur(r);
+    if (r.pts.length > 1500) {
+      var k = Math.ceil(r.pts.length / 1500);
+      r.pts = r.pts.filter(function(p, i, a){ return i % k === 0 || i === a.length - 1; });
+    }
+    store.routes.unshift(r);
+    store.routes = store.routes.slice(0, 10);
+  }
+  if (store.cur) {
+    if (store.cur.pts && store.cur.pts.length > 1) finish(store.cur, true);
+    store.cur = null;
+  }
+
+  function mNote(text){ $('mNoteText').textContent = text; $('mNote').hidden = false; }
+  function hideNote(){ $('mNote').hidden = true; }
+
+  function addPoint(lat, lng, accuracy, t){
+    var r = store.cur;
+    if (!r) return;
+    accM = accuracy;
+    if (accuracy > 40) { renderMap(); return; }
+    var last = r.pts[r.pts.length - 1];
+    if (last) {
+      var dd = hav(last, [lat, lng]), dt = (t - last[2]) / 1000;
+      if (dd < Math.max(3, accuracy * 0.5)) return;
+      if (dt > 0 && dd / dt > 15) return;
+      r.d += dd;
+    }
+    r.pts.push([lat, lng, t]);
+    if (r.pts.length > 5000) r.pts = r.pts.filter(function(p, i, a){ return i % 2 === 0 || i === a.length - 1; });
+    save();
+    renderMap();
+  }
+
+  function halt(){
+    if (geoId != null) { try { navigator.geolocation.clearWatch(geoId); } catch(e) {} geoId = null; }
+    if (demoId) { clearInterval(demoId); demoId = null; }
+    if (tickId) { clearInterval(tickId); tickId = null; }
+  }
+
+  function startRoute(){
+    if (rec !== 'idle') return;
+    hideNote(); viewR = null;
+    if (!navigator.geolocation) { mNote('This browser has no location access. You can still try the demo walk.'); renderMap(true); return; }
+    store.cur = { t0: Date.now(), d: 0, pts: [] };
+    rec = 'gps'; gotFix = false; accM = null;
+    geoId = navigator.geolocation.watchPosition(function(p){
+      gotFix = true;
+      addPoint(p.coords.latitude, p.coords.longitude, p.coords.accuracy || 99, p.timestamp || Date.now());
+    }, function(e){
+      halt(); store.cur = null; rec = 'idle'; accM = null;
+      var msg = e && e.code === 1 ? 'Location access was denied or is blocked in this view. Allow location for this page, or open the page link directly in your browser, then try again.'
+        : e && e.code === 2 ? 'Your location is unavailable. Move to an open area and try again.'
+        : 'Locating took too long. Try again in an open area.';
+      mNote(msg); renderMap(true);
+    }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
+    tickId = setInterval(function(){ renderMap(); }, 1000);
+    renderMap(true);
+  }
+
+  function startDemo(){
+    if (rec !== 'idle') return;
+    hideNote(); viewR = null;
+    var t = Date.now(), lat = 45, lng = 10, h = 0.6;
+    store.cur = { t0: t, d: 0, demo: true, pts: [] };
+    rec = 'demo'; gotFix = true; accM = null;
+    demoId = setInterval(function(){
+      h += 0.09 + (Math.random() - 0.5) * 0.3;
+      lat += Math.cos(h) * 6 / 110540;
+      lng += Math.sin(h) * 6 / (111320 * Math.cos(lat * Math.PI / 180));
+      t += 4000;
+      addPoint(lat, lng, 5, t);
+    }, 500);
+    tickId = setInterval(function(){ renderMap(); }, 1000);
+    renderMap(true);
+  }
+
+  function stopRoute(){
+    halt();
+    var r = store.cur, tooShort = false;
+    rec = 'idle'; accM = null;
+    if (r && r.pts.length > 1) { finish(r); viewR = store.routes[0]; }
+    else { viewR = null; tooShort = true; }
+    store.cur = null;
+    save();
+    renderMap(true);
+    if (tooShort) mNote('Not enough movement to save a route. Walk a little further and try again.');
+  }
+
+  function renderList(){
+    var box = $('mList'), rs = store.routes;
+    box.innerHTML = '';
+    $('mListH').hidden = !rs.length;
+    rs.forEach(function(r){
+      var b = document.createElement('button'), a = document.createElement('span'), v = document.createElement('b'), dt = new Date(r.t0);
+      b.className = 'row rowbtn';
+      a.textContent = dt.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' }) + ', ' + dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) + (r.demo ? ' (demo)' : '');
+      v.textContent = (r.d / 1000).toFixed(2) + ' km · ' + fdur(r.dur || 0);
+      b.appendChild(a); b.appendChild(v);
+      b.addEventListener('click', function(){ if (rec !== 'idle') return; viewR = r; renderMap(); window.scrollTo(0, 0); });
+      box.appendChild(b);
+    });
+  }
+
+  function renderMap(full){
+    var r = viewR || store.cur, pts = r ? r.pts : [], el = $('map');
+    var d = r ? r.d : 0, ms = r ? dur(r) : 0;
+    $('mDist').textContent = (d / 1000).toFixed(2);
+    $('mTime').textContent = fdur(ms);
+    var kmh = ms > 5000 && d > 10 ? d / 1000 / (ms / 3600000) : 0, pace = kmh >= 1 ? 60 / kmh : 0;
+    $('mSpd').textContent = kmh ? kmh.toFixed(1) : '—';
+    if (pace) { var ps = Math.round(pace * 60); $('mPace').textContent = Math.floor(ps / 60) + ':' + ('0' + (ps % 60)).slice(-2); }
+    else $('mPace').textContent = '—';
+
+    $('mState').textContent = rec === 'gps' ? (gotFix ? 'Recording' : 'Locating…') : rec === 'demo' ? 'Demo walk' : viewR ? 'Saved route' : 'Ready';
+    $('mAcc').textContent = rec === 'gps' && accM != null ? 'GPS ±' + Math.round(accM) + ' m' : '';
+    $('mGo').textContent = rec === 'idle' ? 'Start route' : 'Stop and save route';
+    $('mGo').className = 'mgo' + (rec === 'idle' ? '' : ' stop');
+    $('mBack').style.display = viewR && rec === 'idle' ? '' : 'none';
+    $('mDemo').style.display = rec === 'gps' ? 'none' : '';
+    $('mDemo').textContent = rec === 'demo' ? 'Stop demo walk' : 'Try demo walk';
+    if (full) renderList();
+
+    if (!pts.length) {
+      el.innerHTML = '<div class="mempty">' + (rec === 'gps' ? 'Waiting for your first GPS position…' : 'Start a route to see your path here.') + '</div>';
+      return;
+    }
+    var W = 400, H = 360, P = 40, o = pts[0], cl = Math.cos(o[0] * Math.PI / 180);
+    var xy = pts.map(function(p){ return [(p[1] - o[1]) * cl * 111320, -(p[0] - o[0]) * 110540]; });
+    var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    xy.forEach(function(q){ x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); });
+    var sc = Math.min((W - 2 * P) / Math.max(x1 - x0, 120), (H - 2 * P) / Math.max(y1 - y0, 120)), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    var s = xy.map(function(q){ return [W / 2 + (q[0] - cx) * sc, H / 2 + (q[1] - cy) * sc]; });
+    var dp = s.map(function(q, i){ return (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join(' ');
+    var nice = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000], tgt = W * 0.3 / sc, nm = nice[0];
+    nice.forEach(function(v){ if (v <= tgt) nm = v; });
+    var bl = nm * sc, fi = s[0], la = s[s.length - 1], live = !viewR && rec !== 'idle';
+    var lbl = nm >= 1000 ? (nm / 1000) + ' km' : nm + ' m';
+    var end = live
+      ? `<circle class='halo' cx='${la[0].toFixed(1)}' cy='${la[1].toFixed(1)}' r='16' style='fill:var(--accent);opacity:.35'/><circle cx='${la[0].toFixed(1)}' cy='${la[1].toFixed(1)}' r='7' stroke-width='3' style='fill:var(--accent);stroke:var(--surface)'/>`
+      : `<circle cx='${la[0].toFixed(1)}' cy='${la[1].toFixed(1)}' r='6' style='fill:var(--ink)'/>`;
+    el.innerHTML = `<svg viewBox='0 0 ${W} ${H}' xmlns='http://www.w3.org/2000/svg'><defs><pattern id='gp' width='24' height='24' patternUnits='userSpaceOnUse'><circle cx='2' cy='2' r='1' style='fill:var(--line)'/></pattern></defs><rect width='${W}' height='${H}' fill='url(#gp)'/><path d='${dp}' fill='none' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' style='stroke:var(--accent)'/><circle cx='${fi[0].toFixed(1)}' cy='${fi[1].toFixed(1)}' r='6' stroke-width='3' style='fill:var(--surface);stroke:var(--accent)'/>${end}<path d='M16 ${H - 16} H${(16 + bl).toFixed(1)} M16 ${H - 21} V${H - 11} M${(16 + bl).toFixed(1)} ${H - 21} V${H - 11}' fill='none' stroke-width='2' style='stroke:var(--muted)'/><text x='16' y='${H - 27}' font-size='12' style='fill:var(--muted)'>${lbl}</text><text x='${W - 22}' y='26' font-size='13' font-weight='700' text-anchor='middle' style='fill:var(--muted)'>N</text><path d='M${W - 22} 34 V52' fill='none' stroke-width='2' style='stroke:var(--muted)'/></svg>`;
+  }
+
+  $('mGo').addEventListener('click', function(){ if (rec !== 'idle') stopRoute(); else startRoute(); });
+  $('mDemo').addEventListener('click', function(){ if (rec === 'idle') startDemo(); else if (rec === 'demo') stopRoute(); });
+  $('mNoteDemo').addEventListener('click', startDemo);
+  $('mBack').addEventListener('click', function(){ viewR = null; renderMap(true); });
+
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState === 'visible') render();
+    else { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch(e) {} }
+  });
+  setInterval(render, 60000);
+  render();
+})();
+</script>
+</body>
+</html>
